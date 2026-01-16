@@ -40,19 +40,28 @@ export interface CSVColumn {
 }
 
 export interface ColumnMapping {
+  planif: string | null;
   name: string | null;
   sharepointLink: string | null;
   status: string | null;
   ntrk: string | null;
   priority: string | null;
-  stt: string | null;
-  comments: string | null;
   dateVT: string | null;
   dateLTRK: string | null;
   dateGC: string | null;
   dateMontage: string | null;
   dateGrutage: string | null;
+  stt: string | null;
+  comments: string | null;
+  cmdSTT: string | null;
+  cmdEngins: string | null;
   dateMER: string | null;
+  lastModified: string | null;
+  owner: string | null;
+  commercial: string | null;
+  projectManager: string | null;
+  amount: string | null;
+  feeling: string | null;
 }
 
 export interface ValidationError {
@@ -68,8 +77,9 @@ export interface ImportResult {
   warnings: ValidationError[];
 }
 
-// Default column mapping based on common CSV headers
+// Default column mapping based on common CSV headers (Notion export)
 export const DEFAULT_COLUMN_MAPPING: Record<string, keyof ColumnMapping> = {
+  'planif': 'planif',
   'nom du projet': 'name',
   'nom': 'name',
   'name': 'name',
@@ -83,16 +93,26 @@ export const DEFAULT_COLUMN_MAPPING: Record<string, keyof ColumnMapping> = {
   'priorité': 'priority',
   'priorite': 'priority',
   'priority': 'priority',
-  'stt': 'stt',
-  'commentaire': 'comments',
-  'comments': 'comments',
   'date vt': 'dateVT',
   'date l.trk': 'dateLTRK',
   'dates gc': 'dateGC',
   'date gc': 'dateGC',
   'date montage': 'dateMontage',
   'date grutage': 'dateGrutage',
+  'stt': 'stt',
+  'commentaire': 'comments',
+  'comments': 'comments',
+  'cmd stt': 'cmdSTT',
+  'cmd engins': 'cmdEngins',
   'date mer': 'dateMER',
+  'dernière modification': 'lastModified',
+  'derniere modification': 'lastModified',
+  'propriétaire': 'owner',
+  'proprietaire': 'owner',
+  'commercial': 'commercial',
+  'chef de projet': 'projectManager',
+  'montant': 'amount',
+  'ressenti': 'feeling',
 };
 
 export function parseCSV(content: string): { headers: string[]; rows: string[][] } {
@@ -134,19 +154,28 @@ export function parseCSV(content: string): { headers: string[]; rows: string[][]
 
 export function autoMapColumns(headers: string[]): ColumnMapping {
   const mapping: ColumnMapping = {
+    planif: null,
     name: null,
     sharepointLink: null,
     status: null,
     ntrk: null,
     priority: null,
-    stt: null,
-    comments: null,
     dateVT: null,
     dateLTRK: null,
     dateGC: null,
     dateMontage: null,
     dateGrutage: null,
+    stt: null,
+    comments: null,
+    cmdSTT: null,
+    cmdEngins: null,
     dateMER: null,
+    lastModified: null,
+    owner: null,
+    commercial: null,
+    projectManager: null,
+    amount: null,
+    feeling: null,
   };
 
   headers.forEach(header => {
