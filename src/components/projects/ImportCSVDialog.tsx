@@ -18,19 +18,28 @@ interface ImportCSVDialogProps {
 type ImportStep = 'upload' | 'mapping' | 'validation' | 'complete';
 
 const FIELD_LABELS: Record<keyof ColumnMapping, string> = {
+  planif: 'Planif',
   name: 'Nom du projet *',
-  sharepointLink: 'Lien SharePoint',
-  status: 'Statut',
+  sharepointLink: 'Lien Sharepoint',
+  status: 'État',
   ntrk: 'n TRK',
   priority: 'Priorité',
-  stt: 'STT',
-  comments: 'Commentaire',
   dateVT: 'Date VT',
   dateLTRK: 'Date L.TRK',
   dateGC: 'Dates GC',
   dateMontage: 'Date Montage',
   dateGrutage: 'Date Grutage',
+  stt: 'STT',
+  comments: 'Commentaire',
+  cmdSTT: 'CMD STT',
+  cmdEngins: 'CMD ENGINS',
   dateMER: 'Date MER',
+  lastModified: 'Dernière modification',
+  owner: 'Propriétaire',
+  commercial: 'Commercial',
+  projectManager: 'Chef de projet',
+  amount: 'Montant',
+  feeling: 'Ressenti',
 };
 
 export function ImportCSVDialog({ open, onOpenChange }: ImportCSVDialogProps) {
@@ -40,19 +49,28 @@ export function ImportCSVDialog({ open, onOpenChange }: ImportCSVDialogProps) {
   const [headers, setHeaders] = useState<string[]>([]);
   const [rows, setRows] = useState<string[][]>([]);
   const [mapping, setMapping] = useState<ColumnMapping>({
+    planif: null,
     name: null,
     sharepointLink: null,
     status: null,
     ntrk: null,
     priority: null,
-    stt: null,
-    comments: null,
     dateVT: null,
     dateLTRK: null,
     dateGC: null,
     dateMontage: null,
     dateGrutage: null,
+    stt: null,
+    comments: null,
+    cmdSTT: null,
+    cmdEngins: null,
     dateMER: null,
+    lastModified: null,
+    owner: null,
+    commercial: null,
+    projectManager: null,
+    amount: null,
+    feeling: null,
   });
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [importedCount, setImportedCount] = useState(0);
@@ -63,19 +81,28 @@ export function ImportCSVDialog({ open, onOpenChange }: ImportCSVDialogProps) {
     setHeaders([]);
     setRows([]);
     setMapping({
+      planif: null,
       name: null,
       sharepointLink: null,
       status: null,
       ntrk: null,
       priority: null,
-      stt: null,
-      comments: null,
       dateVT: null,
       dateLTRK: null,
       dateGC: null,
       dateMontage: null,
       dateGrutage: null,
+      stt: null,
+      comments: null,
+      cmdSTT: null,
+      cmdEngins: null,
       dateMER: null,
+      lastModified: null,
+      owner: null,
+      commercial: null,
+      projectManager: null,
+      amount: null,
+      feeling: null,
     });
     setImportResult(null);
     setImportedCount(0);
