@@ -5,6 +5,9 @@ import { useProjects } from '@/context/ProjectContext';
 import { Project, ProjectStatus, ProjectPriority, STATUS_LABELS, PRIORITY_LABELS, MILESTONE_LABELS, MilestoneType } from '@/types/project';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
+import { SttBadge } from './SttBadge';
+import { AddressLink } from './AddressLink';
+import { DeleteProjectDialog } from './DeleteProjectDialog';
 import {
   Table,
   TableBody,
@@ -27,7 +30,8 @@ import {
 } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ExternalLink, ChevronUp, ChevronDown, Trash2, MapPin, FolderOpen } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -37,7 +41,7 @@ type SortDirection = 'asc' | 'desc';
 
 export function ProjectTable() {
   const navigate = useNavigate();
-  const { filteredProjects, updateProjectStatus, updateProjectPriority, updateMilestoneDate, toggleMilestoneCompleted } = useProjects();
+  const { filteredProjects, updateProjectStatus, updateProjectPriority, updateMilestoneDate, toggleMilestoneCompleted, deleteProject } = useProjects();
   const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -99,6 +103,7 @@ export function ProjectTable() {
                   Affaire <SortIcon field="name" />
                 </div>
               </TableHead>
+              <TableHead>Liens</TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => handleSort('status')}
@@ -136,17 +141,32 @@ export function ProjectTable() {
                 onClick={() => navigate(`/project/${project.id}`)}
               >
                 <TableCell className="font-medium max-w-[200px]">
+                  <span className="truncate block">{project.name}</span>
+                </TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center gap-2">
-                    <span className="truncate">{project.name}</span>
                     {project.sharepointLink && (
                       <a
                         href={project.sharepointLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-accent"
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-accent transition-colors bg-secondary px-2 py-1 rounded"
+                        title="Ouvrir SharePoint"
                       >
-                        <ExternalLink size={14} />
+                        <FolderOpen size={12} />
+                        <span>SP</span>
+                      </a>
+                    )}
+                    {project.address && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-accent transition-colors bg-secondary px-2 py-1 rounded"
+                        title={project.address}
+                      >
+                        <MapPin size={12} />
+                        <span>Maps</span>
                       </a>
                     )}
                   </div>
@@ -191,9 +211,7 @@ export function ProjectTable() {
                 <TableCell>
                   <div className="flex gap-1 flex-wrap max-w-[120px]">
                     {project.stt?.slice(0, 2).map((s) => (
-                      <span key={s} className="text-xs bg-secondary px-1.5 py-0.5 rounded">
-                        {s}
-                      </span>
+                      <SttBadge key={s} stt={s} />
                     ))}
                     {(project.stt?.length || 0) > 2 && (
                       <span className="text-xs text-muted-foreground">
@@ -237,7 +255,21 @@ export function ProjectTable() {
                     </TableCell>
                   );
                 })}
-                <TableCell />
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <DeleteProjectDialog
+                    projectName={project.name}
+                    onConfirm={() => deleteProject(project.id)}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    }
+                  />
+                </TableCell>
               </motion.tr>
             ))}
           </TableBody>

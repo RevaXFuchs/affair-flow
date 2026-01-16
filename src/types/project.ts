@@ -28,6 +28,7 @@ export interface Project {
   name: string;
   ntrk?: string;
   sharepointLink?: string;
+  address?: string;
   status: ProjectStatus;
   priority: ProjectPriority;
   stt?: string[];
@@ -36,6 +37,16 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
 }
+
+// STT Colors mapping
+export const STT_COLORS: Record<string, { bg: string; text: string }> = {
+  'ENSIO': { bg: 'hsl(217 91% 90%)', text: 'hsl(217 91% 35%)' },
+  'OKERMAD': { bg: 'hsl(142 71% 90%)', text: 'hsl(142 71% 30%)' },
+  'SVEG': { bg: 'hsl(32 95% 90%)', text: 'hsl(32 95% 35%)' },
+  'ALTEC': { bg: 'hsl(280 65% 90%)', text: 'hsl(280 65% 35%)' },
+  'NEXANS': { bg: 'hsl(0 84% 90%)', text: 'hsl(0 84% 40%)' },
+  'ENGIE': { bg: 'hsl(45 93% 90%)', text: 'hsl(45 93% 35%)' },
+};
 
 export interface ProjectFilter {
   status?: ProjectStatus[];
