@@ -6,6 +6,7 @@ import { useProjects } from '@/context/ProjectContext';
 import { ProjectStatus, STATUS_LABELS, STATUS_STYLES } from '@/types/project';
 import { StatusBadge } from '@/components/projects/StatusBadge';
 import { PriorityBadge } from '@/components/projects/PriorityBadge';
+import { SttBadge } from '@/components/projects/SttBadge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
@@ -90,12 +91,7 @@ export default function KanbanView() {
                             {project.stt && project.stt.length > 0 && (
                               <div className="flex gap-1">
                                 {project.stt.slice(0, 2).map((s) => (
-                                  <span 
-                                    key={s} 
-                                    className="text-xs bg-secondary px-1.5 py-0.5 rounded"
-                                  >
-                                    {s}
-                                  </span>
+                                  <SttBadge key={s} stt={s} />
                                 ))}
                               </div>
                             )}

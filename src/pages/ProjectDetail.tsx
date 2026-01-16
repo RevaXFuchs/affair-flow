@@ -4,6 +4,9 @@ import { useProjects } from '@/context/ProjectContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { StatusBadge } from '@/components/projects/StatusBadge';
 import { PriorityBadge } from '@/components/projects/PriorityBadge';
+import { SttBadge } from '@/components/projects/SttBadge';
+import { AddressLink } from '@/components/projects/AddressLink';
+import { DeleteProjectDialog } from '@/components/projects/DeleteProjectDialog';
 import { ProjectStatus, ProjectPriority, STATUS_LABELS, PRIORITY_LABELS, MILESTONE_LABELS, MilestoneType, STT_OPTIONS } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,25 +25,30 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { ArrowLeft, ExternalLink, CalendarIcon, Save } from 'lucide-react';
+import { ArrowLeft, ExternalLink, CalendarIcon, Save, MapPin, FolderOpen, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProjectById, updateProject, updateProjectStatus, updateProjectPriority, updateMilestoneDate, toggleMilestoneCompleted } = useProjects();
+  const { getProjectById, updateProject, updateProjectStatus, updateProjectPriority, updateMilestoneDate, toggleMilestoneCompleted, deleteProject } = useProjects();
   
   const project = getProjectById(id || '');
   const [comments, setComments] = useState(project?.comments || '');
   const [selectedStt, setSelectedStt] = useState<string[]>(project?.stt || []);
+  const [address, setAddress] = useState(project?.address || '');
+  const [sharepointLink, setSharepointLink] = useState(project?.sharepointLink || '');
 
   useEffect(() => {
     if (project) {
       setComments(project.comments || '');
       setSelectedStt(project.stt || []);
+      setAddress(project.address || '');
+      setSharepointLink(project.sharepointLink || '');
     }
   }, [project]);
 
@@ -59,6 +67,17 @@ export default function ProjectDetail() {
 
   const handleSaveComments = () => {
     updateProject(project.id, { comments });
+    toast.success('Commentaires enregistrés');
+  };
+
+  const handleSaveAddress = () => {
+    updateProject(project.id, { address });
+    toast.success('Adresse enregistrée');
+  };
+
+  const handleSaveSharepointLink = () => {
+    updateProject(project.id, { sharepointLink });
+    toast.success('Lien SharePoint enregistré');
   };
 
   const toggleStt = (stt: string) => {
@@ -71,6 +90,12 @@ export default function ProjectDetail() {
 
   const getMilestone = (type: MilestoneType) => {
     return project.milestones.find(m => m.type === type);
+  };
+
+  const handleDelete = () => {
+    deleteProject(project.id);
+    toast.success('Affaire supprimée');
+    navigate('/projects');
   };
 
   return (
@@ -95,14 +120,37 @@ export default function ProjectDetail() {
               <p className="text-muted-foreground">{project.ntrk}</p>
             )}
           </div>
-          {project.sharepointLink && (
-            <Button variant="outline" asChild>
-              <a href={project.sharepointLink} target="_blank" rel="noopener noreferrer">
-                <ExternalLink size={16} className="mr-2" />
-                SharePoint
-              </a>
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {project.sharepointLink && (
+              <Button variant="outline" asChild>
+                <a href={project.sharepointLink} target="_blank" rel="noopener noreferrer">
+                  <FolderOpen size={16} className="mr-2" />
+                  SharePoint
+                </a>
+              </Button>
+            )}
+            {project.address && (
+              <Button variant="outline" asChild>
+                <a 
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(project.address)}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <MapPin size={16} className="mr-2" />
+                  Voir sur Maps
+                </a>
+              </Button>
+            )}
+            <DeleteProjectDialog
+              projectName={project.name}
+              onConfirm={handleDelete}
+              trigger={
+                <Button variant="destructive" size="icon">
+                  <Trash2 size={16} />
+                </Button>
+              }
+            />
+          </div>
         </div>
 
         {/* Status & Priority Row */}
@@ -160,6 +208,67 @@ export default function ProjectDetail() {
           </div>
         </div>
 
+        {/* SharePoint & Address */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-card rounded-xl border p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-muted-foreground flex items-center gap-2">
+                <FolderOpen size={14} />
+                Lien SharePoint
+              </label>
+              <Button size="sm" variant="ghost" onClick={handleSaveSharepointLink}>
+                <Save size={12} className="mr-1" />
+                Sauver
+              </Button>
+            </div>
+            <Input
+              value={sharepointLink}
+              onChange={(e) => setSharepointLink(e.target.value)}
+              placeholder="https://sharepoint.com/..."
+            />
+            {sharepointLink && (
+              <a 
+                href={sharepointLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-accent hover:underline flex items-center gap-1"
+              >
+                <ExternalLink size={10} />
+                Ouvrir le lien
+              </a>
+            )}
+          </div>
+
+          <div className="bg-card rounded-xl border p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm text-muted-foreground flex items-center gap-2">
+                <MapPin size={14} />
+                Adresse du site
+              </label>
+              <Button size="sm" variant="ghost" onClick={handleSaveAddress}>
+                <Save size={12} className="mr-1" />
+                Sauver
+              </Button>
+            </div>
+            <Input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="123 rue de Paris, 75001 Paris"
+            />
+            {address && (
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`}
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-xs text-accent hover:underline flex items-center gap-1"
+              >
+                <MapPin size={10} />
+                Voir sur Google Maps
+              </a>
+            )}
+          </div>
+        </div>
+
         {/* STT / Intervenants */}
         <div className="bg-card rounded-xl border p-6 space-y-4">
           <h2 className="font-semibold">Intervenants (STT)</h2>
@@ -169,13 +278,13 @@ export default function ProjectDetail() {
                 key={stt}
                 onClick={() => toggleStt(stt)}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-all border-2',
                   selectedStt.includes(stt)
-                    ? 'bg-accent text-accent-foreground'
-                    : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                    ? 'border-accent'
+                    : 'border-transparent'
                 )}
               >
-                {stt}
+                <SttBadge stt={stt} className="px-3 py-1" />
               </button>
             ))}
           </div>
