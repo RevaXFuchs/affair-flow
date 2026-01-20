@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Project, ProjectFilter, ProjectStatus, ProjectPriority, MilestoneType } from '@/types/project';
+import { Project, ProjectFilter, ProjectStatus, ProjectPriority, MilestoneType, Contact, ProjectEvent } from '@/types/project';
 import { mockProjects } from '@/data/mockProjects';
 
 interface ProjectContextType {
@@ -15,6 +15,13 @@ interface ProjectContextType {
   getProjectById: (id: string) => Project | undefined;
   addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => void;
   deleteProject: (id: string) => void;
+  addContact: (projectId: string, contact: Omit<Contact, 'id'>) => void;
+  updateContact: (projectId: string, contactId: string, updates: Partial<Contact>) => void;
+  removeContact: (projectId: string, contactId: string) => void;
+  addEvent: (projectId: string, event: Omit<ProjectEvent, 'id'>) => void;
+  updateEvent: (projectId: string, eventId: string, updates: Partial<ProjectEvent>) => void;
+  removeEvent: (projectId: string, eventId: string) => void;
+  addGlobalEvent: (event: Omit<ProjectEvent, 'id'>, projectId: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
@@ -120,6 +127,100 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     setProjects((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
+  const addContact = useCallback((projectId: string, contact: Omit<Contact, 'id'>) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const newContact: Contact = {
+          ...contact,
+          id: `${Date.now()}`,
+        };
+        return {
+          ...p,
+          contacts: [...(p.contacts || []), newContact],
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }, []);
+
+  const updateContact = useCallback((projectId: string, contactId: string, updates: Partial<Contact>) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          contacts: (p.contacts || []).map((c) =>
+            c.id === contactId ? { ...c, ...updates } : c
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }, []);
+
+  const removeContact = useCallback((projectId: string, contactId: string) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          contacts: (p.contacts || []).filter((c) => c.id !== contactId),
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }, []);
+
+  const addEvent = useCallback((projectId: string, event: Omit<ProjectEvent, 'id'>) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        const newEvent: ProjectEvent = {
+          ...event,
+          id: `${Date.now()}`,
+        };
+        return {
+          ...p,
+          events: [...(p.events || []), newEvent],
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }, []);
+
+  const updateEvent = useCallback((projectId: string, eventId: string, updates: Partial<ProjectEvent>) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          events: (p.events || []).map((e) =>
+            e.id === eventId ? { ...e, ...updates } : e
+          ),
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }, []);
+
+  const removeEvent = useCallback((projectId: string, eventId: string) => {
+    setProjects((prev) =>
+      prev.map((p) => {
+        if (p.id !== projectId) return p;
+        return {
+          ...p,
+          events: (p.events || []).filter((e) => e.id !== eventId),
+          updatedAt: new Date().toISOString(),
+        };
+      })
+    );
+  }, []);
+
+  const addGlobalEvent = useCallback((event: Omit<ProjectEvent, 'id'>, projectId: string) => {
+    addEvent(projectId, event);
+  }, [addEvent]);
+
   return (
     <ProjectContext.Provider
       value={{
@@ -135,6 +236,13 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         getProjectById,
         addProject,
         deleteProject,
+        addContact,
+        updateContact,
+        removeContact,
+        addEvent,
+        updateEvent,
+        removeEvent,
+        addGlobalEvent,
       }}
     >
       {children}

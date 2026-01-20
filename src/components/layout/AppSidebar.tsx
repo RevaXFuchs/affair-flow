@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Table2,
   Calendar,
-  CalendarDays,
   Settings,
   FolderKanban,
   ChevronLeft,
@@ -17,7 +16,6 @@ const navigation = [
   { name: 'Tableau de bord', href: '/', icon: LayoutDashboard },
   { name: 'Projets', href: '/projects', icon: Table2 },
   { name: 'Calendrier', href: '/calendar', icon: Calendar },
-  { name: 'Calendrier Montage', href: '/calendar/montage', icon: CalendarDays },
   { name: 'Kanban', href: '/kanban', icon: FolderKanban },
 ];
 
@@ -93,7 +91,9 @@ export function AppSidebar() {
           to="/settings"
           className={cn(
             'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all',
-            'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            location.pathname === '/settings'
+              ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+              : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
           )}
         >
           <Settings size={20} />

@@ -5,8 +5,9 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { StatusBadge } from '@/components/projects/StatusBadge';
 import { PriorityBadge } from '@/components/projects/PriorityBadge';
 import { SttBadge } from '@/components/projects/SttBadge';
-import { AddressLink } from '@/components/projects/AddressLink';
 import { DeleteProjectDialog } from '@/components/projects/DeleteProjectDialog';
+import { ContactsSection } from '@/components/projects/ContactsSection';
+import { EventsSection } from '@/components/projects/EventsSection';
 import { ProjectStatus, ProjectPriority, STATUS_LABELS, PRIORITY_LABELS, MILESTONE_LABELS, MilestoneType, STT_OPTIONS } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,20 @@ import { toast } from 'sonner';
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProjectById, updateProject, updateProjectStatus, updateProjectPriority, updateMilestoneDate, toggleMilestoneCompleted, deleteProject } = useProjects();
+  const { 
+    getProjectById, 
+    updateProject, 
+    updateProjectStatus, 
+    updateProjectPriority, 
+    updateMilestoneDate, 
+    toggleMilestoneCompleted, 
+    deleteProject,
+    addContact,
+    updateContact,
+    removeContact,
+    addEvent,
+    removeEvent,
+  } = useProjects();
   
   const project = getProjectById(id || '');
   const [comments, setComments] = useState(project?.comments || '');
@@ -290,9 +304,17 @@ export default function ProjectDetail() {
           </div>
         </div>
 
+        {/* Contacts Section */}
+        <ContactsSection
+          contacts={project.contacts || []}
+          onAddContact={(contact) => addContact(project.id, contact)}
+          onRemoveContact={(contactId) => removeContact(project.id, contactId)}
+          onUpdateContact={(contactId, updates) => updateContact(project.id, contactId, updates)}
+        />
+
         {/* Milestones */}
         <div className="bg-card rounded-xl border p-6 space-y-4">
-          <h2 className="font-semibold">Jalons</h2>
+          <h2 className="font-semibold">Jalons (synchronisés avec le calendrier)</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {(['vt', 'ltrk', 'gc', 'montage', 'grutage', 'mer'] as MilestoneType[]).map((type) => {
               const milestone = getMilestone(type);
@@ -329,6 +351,7 @@ export default function ProjectDetail() {
                           selected={date ? parseISO(date) : undefined}
                           onSelect={(d) => updateMilestoneDate(project.id, type, d?.toISOString().split('T')[0], endDate)}
                           locale={fr}
+                          className="pointer-events-auto"
                         />
                       </PopoverContent>
                     </Popover>
@@ -346,6 +369,7 @@ export default function ProjectDetail() {
                             selected={endDate ? parseISO(endDate) : undefined}
                             onSelect={(d) => updateMilestoneDate(project.id, type, date, d?.toISOString().split('T')[0])}
                             locale={fr}
+                            className="pointer-events-auto"
                           />
                         </PopoverContent>
                       </Popover>
@@ -356,6 +380,13 @@ export default function ProjectDetail() {
             })}
           </div>
         </div>
+
+        {/* Events Section */}
+        <EventsSection
+          events={project.events || []}
+          onAddEvent={(event) => addEvent(project.id, event)}
+          onRemoveEvent={(eventId) => removeEvent(project.id, eventId)}
+        />
 
         {/* Comments */}
         <div className="bg-card rounded-xl border p-6 space-y-4">
