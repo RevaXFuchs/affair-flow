@@ -23,6 +23,23 @@ export interface Milestone {
   completed: boolean;
 }
 
+export interface Contact {
+  id: string;
+  name: string;
+  role: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface ProjectEvent {
+  id: string;
+  title: string;
+  date: string;
+  endDate?: string;
+  type: 'custom' | 'milestone';
+  description?: string;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -34,6 +51,8 @@ export interface Project {
   stt?: string[];
   comments?: string;
   milestones: Milestone[];
+  contacts?: Contact[];
+  events?: ProjectEvent[];
   createdAt: string;
   updatedAt: string;
 }

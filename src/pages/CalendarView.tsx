@@ -3,11 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useProjects } from '@/context/ProjectContext';
-import { MilestoneType, MILESTONE_LABELS, Project } from '@/types/project';
-import { StatusBadge } from '@/components/projects/StatusBadge';
-import { PriorityBadge } from '@/components/projects/PriorityBadge';
+import { MilestoneType, MILESTONE_LABELS, Project, ProjectEvent } from '@/types/project';
+import { AddEventDialog } from '@/components/projects/AddEventDialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -21,20 +20,26 @@ import {
 
 interface CalendarEvent {
   project: Project;
-  milestoneType: MilestoneType;
+  milestoneType?: MilestoneType;
+  customEvent?: ProjectEvent;
   date: string;
   endDate?: string;
+  title: string;
+  type: 'milestone' | 'custom';
 }
 
 export default function CalendarView() {
   const navigate = useNavigate();
-  const { projects } = useProjects();
+  const { projects, addEvent } = useProjects();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedMilestone, setSelectedMilestone] = useState<MilestoneType | 'all'>('all');
+  const [selectedMilestone, setSelectedMilestone] = useState<MilestoneType | 'all' | 'custom'>('all');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   const events = useMemo(() => {
     const allEvents: CalendarEvent[] = [];
+    
     projects.forEach((project) => {
+      // Add milestone events
       project.milestones.forEach((milestone) => {
         if (milestone.startDate) {
           if (selectedMilestone === 'all' || selectedMilestone === milestone.type) {
@@ -43,11 +48,28 @@ export default function CalendarView() {
               milestoneType: milestone.type,
               date: milestone.startDate,
               endDate: milestone.endDate,
+              title: `${MILESTONE_LABELS[milestone.type]} - ${project.name}`,
+              type: 'milestone',
             });
           }
         }
       });
+
+      // Add custom events
+      if (selectedMilestone === 'all' || selectedMilestone === 'custom') {
+        (project.events || []).forEach((event) => {
+          allEvents.push({
+            project,
+            customEvent: event,
+            date: event.date,
+            endDate: event.endDate,
+            title: `${event.title} - ${project.name}`,
+            type: 'custom',
+          });
+        });
+      }
     });
+    
     return allEvents;
   }, [projects, selectedMilestone]);
 
@@ -70,6 +92,12 @@ export default function CalendarView() {
 
   const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
+  const handleAddEvent = (event: Omit<ProjectEvent, 'id'>) => {
+    if (selectedProjectId) {
+      addEvent(selectedProjectId, event);
+    }
+  };
+
   return (
     <AppLayout>
       <motion.div
@@ -78,27 +106,42 @@ export default function CalendarView() {
         className="space-y-6"
       >
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold">Calendrier</h1>
-            <p className="text-muted-foreground">Vue par jalons</p>
+            <p className="text-muted-foreground">Vue par jalons et événements</p>
           </div>
-          <Select
-            value={selectedMilestone}
-            onValueChange={(value) => setSelectedMilestone(value as MilestoneType | 'all')}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les jalons</SelectItem>
-              {(Object.keys(MILESTONE_LABELS) as MilestoneType[]).map((type) => (
-                <SelectItem key={type} value={type}>
-                  {MILESTONE_LABELS[type]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-4">
+            <Select
+              value={selectedMilestone}
+              onValueChange={(value) => setSelectedMilestone(value as MilestoneType | 'all' | 'custom')}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les événements</SelectItem>
+                <SelectItem value="custom">Événements personnalisés</SelectItem>
+                {(Object.keys(MILESTONE_LABELS) as MilestoneType[]).map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {MILESTONE_LABELS[type]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <AddEventDialog
+              onAddEvent={handleAddEvent}
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+              onSelectProject={setSelectedProjectId}
+              trigger={
+                <Button>
+                  <Plus size={16} className="mr-2" />
+                  Nouvel événement
+                </Button>
+              }
+            />
+          </div>
         </div>
 
         {/* Calendar Navigation */}
@@ -161,12 +204,20 @@ export default function CalendarView() {
                   <div className="space-y-1 overflow-y-auto max-h-[80px]">
                     {dayEvents.slice(0, 3).map((event, eventIndex) => (
                       <button
-                        key={`${event.project.id}-${event.milestoneType}-${eventIndex}`}
+                        key={`${event.project.id}-${event.milestoneType || event.customEvent?.id}-${eventIndex}`}
                         onClick={() => navigate(`/project/${event.project.id}`)}
-                        className="calendar-event w-full text-left"
+                        className={cn(
+                          'calendar-event w-full text-left',
+                          event.type === 'custom' && 'bg-accent/20'
+                        )}
                       >
-                        <span className="font-medium">{MILESTONE_LABELS[event.milestoneType]}</span>
-                        <span className="opacity-80 ml-1">- {event.project.name.slice(0, 15)}...</span>
+                        <span className="font-medium">
+                          {event.type === 'milestone' 
+                            ? MILESTONE_LABELS[event.milestoneType!]
+                            : event.customEvent?.title
+                          }
+                        </span>
+                        <span className="opacity-80 ml-1">- {event.project.name.slice(0, 12)}...</span>
                       </button>
                     ))}
                     {dayEvents.length > 3 && (
