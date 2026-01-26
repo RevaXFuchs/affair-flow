@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useProjects } from '@/context/ProjectContext';
-import { Project, ProjectStatus, ProjectPriority, STATUS_LABELS, PRIORITY_LABELS, MILESTONE_LABELS, MilestoneType } from '@/types/project';
+import { useSettings } from '@/context/SettingsContext';
+import { Project, MilestoneType } from '@/types/project';
 import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { SttBadge } from './SttBadge';
-import { AddressLink } from './AddressLink';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
 import {
   Table,
@@ -31,7 +31,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, ChevronUp, ChevronDown, Trash2, MapPin, FolderOpen } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, MapPin, FolderOpen } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,7 @@ type SortDirection = 'asc' | 'desc';
 export function ProjectTable() {
   const navigate = useNavigate();
   const { filteredProjects, updateProjectStatus, updateProjectPriority, updateMilestoneDate, toggleMilestoneCompleted, deleteProject } = useProjects();
+  const { settings, getMilestoneConfig, getMilestoneColor } = useSettings();
   const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -55,8 +56,8 @@ export function ProjectTable() {
         comparison = a.status.localeCompare(b.status);
         break;
       case 'priority':
-        const priorityOrder = { 'low': 0, 'medium': 1, 'high': 2, 'very-high': 3 };
-        comparison = priorityOrder[a.priority] - priorityOrder[b.priority];
+        const priorityOrder: Record<string, number> = { 'low': 0, 'medium': 1, 'high': 2, 'very-high': 3 };
+        comparison = (priorityOrder[a.priority] || 0) - (priorityOrder[b.priority] || 0);
         break;
       case 'updatedAt':
         comparison = new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
@@ -88,6 +89,8 @@ export function ProjectTable() {
     const milestone = project.milestones.find(m => m.type === type);
     return milestone?.completed || false;
   };
+
+  const milestoneTypes: MilestoneType[] = ['vt', 'ltrk', 'gc', 'montage', 'grutage', 'mer'];
 
   return (
     <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
@@ -122,9 +125,9 @@ export function ProjectTable() {
               </TableHead>
               <TableHead>nTRK</TableHead>
               <TableHead>STT</TableHead>
-              {(['vt', 'ltrk', 'gc', 'montage', 'grutage', 'mer'] as MilestoneType[]).map(type => (
+              {milestoneTypes.map(type => (
                 <TableHead key={type} className="text-center">
-                  {MILESTONE_LABELS[type]}
+                  {getMilestoneConfig(type)?.label || type.toUpperCase()}
                 </TableHead>
               ))}
               <TableHead className="w-10"></TableHead>
@@ -174,15 +177,15 @@ export function ProjectTable() {
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Select
                     value={project.status}
-                    onValueChange={(value) => updateProjectStatus(project.id, value as ProjectStatus)}
+                    onValueChange={(value) => updateProjectStatus(project.id, value)}
                   >
                     <SelectTrigger className="w-auto border-none shadow-none h-auto p-0 hover:bg-transparent">
                       <StatusBadge status={project.status} />
                     </SelectTrigger>
                     <SelectContent>
-                      {(Object.keys(STATUS_LABELS) as ProjectStatus[]).map((status) => (
-                        <SelectItem key={status} value={status}>
-                          <StatusBadge status={status} />
+                      {settings.statuses.map((status) => (
+                        <SelectItem key={status.id} value={status.id}>
+                          {status.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -191,15 +194,15 @@ export function ProjectTable() {
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <Select
                     value={project.priority}
-                    onValueChange={(value) => updateProjectPriority(project.id, value as ProjectPriority)}
+                    onValueChange={(value) => updateProjectPriority(project.id, value)}
                   >
                     <SelectTrigger className="w-auto border-none shadow-none h-auto p-0 hover:bg-transparent">
                       <PriorityBadge priority={project.priority} />
                     </SelectTrigger>
                     <SelectContent>
-                      {(Object.keys(PRIORITY_LABELS) as ProjectPriority[]).map((priority) => (
-                        <SelectItem key={priority} value={priority}>
-                          <PriorityBadge priority={priority} />
+                      {settings.priorities.map((priority) => (
+                        <SelectItem key={priority.id} value={priority.id}>
+                          {priority.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -220,9 +223,10 @@ export function ProjectTable() {
                     )}
                   </div>
                 </TableCell>
-                {(['vt', 'ltrk', 'gc', 'montage', 'grutage', 'mer'] as MilestoneType[]).map(type => {
+                {milestoneTypes.map(type => {
                   const date = getMilestoneDate(project, type);
                   const completed = isMilestoneCompleted(project, type);
+                  const color = getMilestoneColor(type, completed);
                   return (
                     <TableCell key={type} className="text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-1">
@@ -236,18 +240,20 @@ export function ProjectTable() {
                             <button
                               className={cn(
                                 'text-xs px-1.5 py-0.5 rounded hover:bg-secondary transition-colors',
-                                completed && 'line-through text-muted-foreground'
+                                !completed && 'opacity-50'
                               )}
+                              style={{ color: color }}
                             >
                               {date ? format(parseISO(date), 'dd/MM', { locale: fr }) : '—'}
                             </button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="center">
+                          <PopoverContent className="w-auto p-0 pointer-events-auto" align="center">
                             <Calendar
                               mode="single"
                               selected={date ? parseISO(date) : undefined}
                               onSelect={(d) => updateMilestoneDate(project.id, type, d?.toISOString().split('T')[0])}
                               locale={fr}
+                              className="pointer-events-auto"
                             />
                           </PopoverContent>
                         </Popover>

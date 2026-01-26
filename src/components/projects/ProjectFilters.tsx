@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useProjects } from '@/context/ProjectContext';
-import { ProjectStatus, ProjectPriority, STATUS_LABELS, PRIORITY_LABELS } from '@/types/project';
+import { useSettings } from '@/context/SettingsContext';
 import { Search, Filter, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 
 export function ProjectFilters() {
   const { filter, setFilter } = useProjects();
+  const { settings } = useSettings();
   const [searchValue, setSearchValue] = useState(filter.search || '');
 
   const handleSearchChange = (value: string) => {
@@ -21,19 +22,19 @@ export function ProjectFilters() {
     setFilter({ ...filter, search: value || undefined });
   };
 
-  const toggleStatusFilter = (status: ProjectStatus) => {
+  const toggleStatusFilter = (statusId: string) => {
     const currentStatuses = filter.status || [];
-    const newStatuses = currentStatuses.includes(status)
-      ? currentStatuses.filter((s) => s !== status)
-      : [...currentStatuses, status];
+    const newStatuses = currentStatuses.includes(statusId as any)
+      ? currentStatuses.filter((s) => s !== statusId)
+      : [...currentStatuses, statusId as any];
     setFilter({ ...filter, status: newStatuses.length > 0 ? newStatuses : undefined });
   };
 
-  const togglePriorityFilter = (priority: ProjectPriority) => {
+  const togglePriorityFilter = (priorityId: string) => {
     const currentPriorities = filter.priority || [];
-    const newPriorities = currentPriorities.includes(priority)
-      ? currentPriorities.filter((p) => p !== priority)
-      : [...currentPriorities, priority];
+    const newPriorities = currentPriorities.includes(priorityId as any)
+      ? currentPriorities.filter((p) => p !== priorityId)
+      : [...currentPriorities, priorityId as any];
     setFilter({ ...filter, priority: newPriorities.length > 0 ? newPriorities : undefined });
   };
 
@@ -74,17 +75,17 @@ export function ProjectFilters() {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-56 p-3" align="start">
-          <div className="space-y-2">
-            {(Object.keys(STATUS_LABELS) as ProjectStatus[]).map((status) => (
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {settings.statuses.map((status) => (
               <label
-                key={status}
+                key={status.id}
                 className="flex items-center gap-2 cursor-pointer hover:bg-secondary/50 p-1.5 rounded-md transition-colors"
               >
                 <Checkbox
-                  checked={filter.status?.includes(status) || false}
-                  onCheckedChange={() => toggleStatusFilter(status)}
+                  checked={filter.status?.includes(status.id as any) || false}
+                  onCheckedChange={() => toggleStatusFilter(status.id)}
                 />
-                <span className="text-sm">{STATUS_LABELS[status]}</span>
+                <span className="text-sm">{status.label}</span>
               </label>
             ))}
           </div>
@@ -106,16 +107,16 @@ export function ProjectFilters() {
         </PopoverTrigger>
         <PopoverContent className="w-48 p-3" align="start">
           <div className="space-y-2">
-            {(Object.keys(PRIORITY_LABELS) as ProjectPriority[]).map((priority) => (
+            {settings.priorities.map((priority) => (
               <label
-                key={priority}
+                key={priority.id}
                 className="flex items-center gap-2 cursor-pointer hover:bg-secondary/50 p-1.5 rounded-md transition-colors"
               >
                 <Checkbox
-                  checked={filter.priority?.includes(priority) || false}
-                  onCheckedChange={() => togglePriorityFilter(priority)}
+                  checked={filter.priority?.includes(priority.id as any) || false}
+                  onCheckedChange={() => togglePriorityFilter(priority.id)}
                 />
-                <span className="text-sm">{PRIORITY_LABELS[priority]}</span>
+                <span className="text-sm">{priority.label}</span>
               </label>
             ))}
           </div>

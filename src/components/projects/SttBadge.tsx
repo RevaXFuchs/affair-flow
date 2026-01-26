@@ -1,4 +1,4 @@
-import { STT_COLORS } from '@/types/project';
+import { useSettings } from '@/context/SettingsContext';
 
 interface SttBadgeProps {
   stt: string;
@@ -6,7 +6,8 @@ interface SttBadgeProps {
 }
 
 export function SttBadge({ stt, className }: SttBadgeProps) {
-  const colors = STT_COLORS[stt] || { bg: 'hsl(215 20% 95%)', text: 'hsl(215 16% 47%)' };
+  const { getSttColor } = useSettings();
+  const colors = getSttColor(stt);
   
   return (
     <span

@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Project, ProjectFilter, ProjectStatus, ProjectPriority, MilestoneType, Contact, ProjectEvent } from '@/types/project';
-import { mockProjects } from '@/data/mockProjects';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { Project, ProjectFilter, MilestoneType, Contact, ProjectEvent } from '@/types/project';
+import { loadProjects, saveProjects } from '@/lib/storage';
 
 interface ProjectContextType {
   projects: Project[];
@@ -8,8 +8,8 @@ interface ProjectContextType {
   filter: ProjectFilter;
   setFilter: (filter: ProjectFilter) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
-  updateProjectStatus: (id: string, status: ProjectStatus) => void;
-  updateProjectPriority: (id: string, priority: ProjectPriority) => void;
+  updateProjectStatus: (id: string, status: string) => void;
+  updateProjectPriority: (id: string, priority: string) => void;
   updateMilestoneDate: (projectId: string, milestoneType: MilestoneType, startDate?: string, endDate?: string) => void;
   toggleMilestoneCompleted: (projectId: string, milestoneType: MilestoneType) => void;
   getProjectById: (id: string) => Project | undefined;
@@ -21,22 +21,29 @@ interface ProjectContextType {
   addEvent: (projectId: string, event: Omit<ProjectEvent, 'id'>) => void;
   updateEvent: (projectId: string, eventId: string, updates: Partial<ProjectEvent>) => void;
   removeEvent: (projectId: string, eventId: string) => void;
-  addGlobalEvent: (event: Omit<ProjectEvent, 'id'>, projectId: string) => void;
+  importProjects: (projects: Project[]) => void;
+  remapProjectStatus: (oldStatus: string, newStatus: string) => void;
+  remapProjectPriority: (oldPriority: string, newPriority: string) => void;
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined);
 
 export function ProjectProvider({ children }: { children: React.ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
+  const [projects, setProjects] = useState<Project[]>(loadProjects);
   const [filter, setFilter] = useState<ProjectFilter>({});
+
+  // Persist on change
+  useEffect(() => {
+    saveProjects(projects);
+  }, [projects]);
 
   const filteredProjects = React.useMemo(() => {
     return projects.filter((project) => {
       if (filter.status && filter.status.length > 0) {
-        if (!filter.status.includes(project.status)) return false;
+        if (!filter.status.includes(project.status as any)) return false;
       }
       if (filter.priority && filter.priority.length > 0) {
-        if (!filter.priority.includes(project.priority)) return false;
+        if (!filter.priority.includes(project.priority as any)) return false;
       }
       if (filter.search) {
         const searchLower = filter.search.toLowerCase();
@@ -62,12 +69,12 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const updateProjectStatus = useCallback((id: string, status: ProjectStatus) => {
-    updateProject(id, { status });
+  const updateProjectStatus = useCallback((id: string, status: string) => {
+    updateProject(id, { status: status as any });
   }, [updateProject]);
 
-  const updateProjectPriority = useCallback((id: string, priority: ProjectPriority) => {
-    updateProject(id, { priority });
+  const updateProjectPriority = useCallback((id: string, priority: string) => {
+    updateProject(id, { priority: priority as any });
   }, [updateProject]);
 
   const updateMilestoneDate = useCallback(
@@ -217,9 +224,40 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  const addGlobalEvent = useCallback((event: Omit<ProjectEvent, 'id'>, projectId: string) => {
-    addEvent(projectId, event);
-  }, [addEvent]);
+  const importProjects = useCallback((newProjects: Project[]) => {
+    setProjects((prev) => {
+      const updated = [...prev];
+      newProjects.forEach((np) => {
+        const existingIndex = updated.findIndex((p) => p.id === np.id);
+        if (existingIndex >= 0) {
+          updated[existingIndex] = np;
+        } else {
+          updated.push(np);
+        }
+      });
+      return updated;
+    });
+  }, []);
+
+  const remapProjectStatus = useCallback((oldStatus: string, newStatus: string) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.status === oldStatus
+          ? { ...p, status: newStatus as any, updatedAt: new Date().toISOString() }
+          : p
+      )
+    );
+  }, []);
+
+  const remapProjectPriority = useCallback((oldPriority: string, newPriority: string) => {
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.priority === oldPriority
+          ? { ...p, priority: newPriority as any, updatedAt: new Date().toISOString() }
+          : p
+      )
+    );
+  }, []);
 
   return (
     <ProjectContext.Provider
@@ -242,7 +280,9 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         addEvent,
         updateEvent,
         removeEvent,
-        addGlobalEvent,
+        importProjects,
+        remapProjectStatus,
+        remapProjectPriority,
       }}
     >
       {children}
