@@ -1,15 +1,17 @@
-import { ProjectStatus, STATUS_LABELS, STATUS_STYLES } from '@/types/project';
+import { useSettings } from '@/context/SettingsContext';
 import { cn } from '@/lib/utils';
 
 interface StatusBadgeProps {
-  status: ProjectStatus;
+  status: string;
   className?: string;
 }
 
 export function StatusBadge({ status, className }: StatusBadgeProps) {
+  const { getStatusLabel } = useSettings();
+  
   return (
-    <span className={cn('status-badge', STATUS_STYLES[status], className)}>
-      {STATUS_LABELS[status]}
+    <span className={cn('status-badge bg-muted text-foreground', className)}>
+      {getStatusLabel(status)}
     </span>
   );
 }

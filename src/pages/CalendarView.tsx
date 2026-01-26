@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useProjects } from '@/context/ProjectContext';
-import { MilestoneType, MILESTONE_LABELS, Project, ProjectEvent } from '@/types/project';
+import { useSettings } from '@/context/SettingsContext';
+import { MilestoneType, Project, ProjectEvent } from '@/types/project';
 import { AddEventDialog } from '@/components/projects/AddEventDialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Circle } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -26,11 +27,13 @@ interface CalendarEvent {
   endDate?: string;
   title: string;
   type: 'milestone' | 'custom';
+  confirmed?: boolean;
 }
 
 export default function CalendarView() {
   const navigate = useNavigate();
   const { projects, addEvent } = useProjects();
+  const { settings, getMilestoneColor, getMilestoneConfig } = useSettings();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedMilestone, setSelectedMilestone] = useState<MilestoneType | 'all' | 'custom'>('all');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
@@ -48,8 +51,9 @@ export default function CalendarView() {
               milestoneType: milestone.type,
               date: milestone.startDate,
               endDate: milestone.endDate,
-              title: `${MILESTONE_LABELS[milestone.type]} - ${project.name}`,
+              title: `${getMilestoneConfig(milestone.type)?.label || milestone.type} - ${project.name}`,
               type: 'milestone',
+              confirmed: milestone.completed,
             });
           }
         }
@@ -65,13 +69,14 @@ export default function CalendarView() {
             endDate: event.endDate,
             title: `${event.title} - ${project.name}`,
             type: 'custom',
+            confirmed: true,
           });
         });
       }
     });
     
     return allEvents;
-  }, [projects, selectedMilestone]);
+  }, [projects, selectedMilestone, getMilestoneConfig]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -98,6 +103,13 @@ export default function CalendarView() {
     }
   };
 
+  const getEventColor = (event: CalendarEvent) => {
+    if (event.type === 'custom') {
+      return 'hsl(var(--accent))';
+    }
+    return getMilestoneColor(event.milestoneType!, event.confirmed || false);
+  };
+
   return (
     <AppLayout>
       <motion.div
@@ -122,9 +134,9 @@ export default function CalendarView() {
               <SelectContent>
                 <SelectItem value="all">Tous les événements</SelectItem>
                 <SelectItem value="custom">Événements personnalisés</SelectItem>
-                {(Object.keys(MILESTONE_LABELS) as MilestoneType[]).map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {MILESTONE_LABELS[type]}
+                {settings.milestoneTypes.map((type) => (
+                  <SelectItem key={type.key} value={type.key}>
+                    {type.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -142,6 +154,17 @@ export default function CalendarView() {
               }
             />
           </div>
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-4 p-3 bg-muted/30 rounded-lg">
+          {settings.milestoneTypes.map((type) => (
+            <div key={type.key} className="flex items-center gap-2 text-sm">
+              <Circle size={12} fill={type.color} stroke={type.color} />
+              <span>{type.label}</span>
+              <span className="text-muted-foreground text-xs">(pâle = prévisionnel)</span>
+            </div>
+          ))}
         </div>
 
         {/* Calendar Navigation */}
@@ -187,7 +210,7 @@ export default function CalendarView() {
                   key={day.toISOString()}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: index * 0.01 }}
+                  transition={{ delay: index * 0.005 }}
                   className={cn(
                     'min-h-[100px] p-1 border rounded-lg transition-colors',
                     isCurrentMonth ? 'bg-background' : 'bg-muted/20',
@@ -202,24 +225,29 @@ export default function CalendarView() {
                     {format(day, 'd')}
                   </div>
                   <div className="space-y-1 overflow-y-auto max-h-[80px]">
-                    {dayEvents.slice(0, 3).map((event, eventIndex) => (
-                      <button
-                        key={`${event.project.id}-${event.milestoneType || event.customEvent?.id}-${eventIndex}`}
-                        onClick={() => navigate(`/project/${event.project.id}`)}
-                        className={cn(
-                          'calendar-event w-full text-left',
-                          event.type === 'custom' && 'bg-accent/20'
-                        )}
-                      >
-                        <span className="font-medium">
-                          {event.type === 'milestone' 
-                            ? MILESTONE_LABELS[event.milestoneType!]
-                            : event.customEvent?.title
-                          }
-                        </span>
-                        <span className="opacity-80 ml-1">- {event.project.name.slice(0, 12)}...</span>
-                      </button>
-                    ))}
+                    {dayEvents.slice(0, 3).map((event, eventIndex) => {
+                      const color = getEventColor(event);
+                      return (
+                        <button
+                          key={`${event.project.id}-${event.milestoneType || event.customEvent?.id}-${eventIndex}`}
+                          onClick={() => navigate(`/project/${event.project.id}`)}
+                          className="w-full text-left text-xs px-1.5 py-0.5 rounded truncate transition-opacity hover:opacity-80"
+                          style={{
+                            backgroundColor: color,
+                            color: 'white',
+                            opacity: event.confirmed ? 1 : 0.5,
+                          }}
+                        >
+                          <span className="font-medium">
+                            {event.type === 'milestone' 
+                              ? getMilestoneConfig(event.milestoneType!)?.label
+                              : event.customEvent?.title
+                            }
+                          </span>
+                          <span className="opacity-80 ml-1">- {event.project.name.slice(0, 10)}...</span>
+                        </button>
+                      );
+                    })}
                     {dayEvents.length > 3 && (
                       <div className="text-xs text-muted-foreground px-2">
                         +{dayEvents.length - 3} autres

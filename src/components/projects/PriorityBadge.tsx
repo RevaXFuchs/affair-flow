@@ -1,26 +1,35 @@
-import { ProjectPriority, PRIORITY_LABELS, PRIORITY_STYLES } from '@/types/project';
+import { useSettings } from '@/context/SettingsContext';
 import { cn } from '@/lib/utils';
 import { ArrowUp, ArrowDown, Minus, ChevronsUp } from 'lucide-react';
 
-const PRIORITY_ICONS: Record<ProjectPriority, typeof ArrowUp> = {
+const PRIORITY_ICONS: Record<string, typeof ArrowUp> = {
   'low': ArrowDown,
   'medium': Minus,
   'high': ArrowUp,
   'very-high': ChevronsUp,
 };
 
+const PRIORITY_COLORS: Record<string, string> = {
+  'low': 'priority-low',
+  'medium': 'priority-medium',
+  'high': 'priority-high',
+  'very-high': 'priority-very-high',
+};
+
 interface PriorityBadgeProps {
-  priority: ProjectPriority;
+  priority: string;
   className?: string;
 }
 
 export function PriorityBadge({ priority, className }: PriorityBadgeProps) {
-  const Icon = PRIORITY_ICONS[priority];
+  const { getPriorityLabel } = useSettings();
+  const Icon = PRIORITY_ICONS[priority] || Minus;
+  const colorClass = PRIORITY_COLORS[priority] || '';
   
   return (
-    <span className={cn('priority-badge', PRIORITY_STYLES[priority], className)}>
+    <span className={cn('priority-badge', colorClass, className)}>
       <Icon size={12} />
-      {PRIORITY_LABELS[priority]}
+      {getPriorityLabel(priority)}
     </span>
   );
 }
