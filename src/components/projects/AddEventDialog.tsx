@@ -33,7 +33,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface AddEventDialogProps {
-  onAddEvent: (event: Omit<ProjectEvent, 'id'>) => void;
+  onAddEvent: (event: Omit<ProjectEvent, 'id'>, projectId?: string) => void;
   projects?: Project[];
   selectedProjectId?: string;
   onSelectProject?: (projectId: string) => void;
@@ -80,10 +80,12 @@ export function AddEventDialog({
       description: description.trim() || undefined,
     };
 
+    // Pass the projectId with the event
+    onAddEvent(event, projectId || undefined);
+    
     if (onSelectProject && projectId) {
       onSelectProject(projectId);
     }
-    onAddEvent(event);
     
     setTitle('');
     setDescription('');

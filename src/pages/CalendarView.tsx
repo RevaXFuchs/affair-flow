@@ -11,6 +11,7 @@ import { ChevronLeft, ChevronRight, Plus, Circle } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, parseISO, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import {
   Select,
   SelectContent,
@@ -141,9 +142,13 @@ export default function CalendarView() {
               </SelectContent>
             </Select>
             <AddEventDialog
-              onAddEvent={(event) => {
-                if (selectedProjectId) {
-                  handleAddEvent(selectedProjectId, event);
+              onAddEvent={(event, projectIdFromDialog) => {
+                const targetProjectId = projectIdFromDialog || selectedProjectId;
+                if (targetProjectId) {
+                  addEvent(targetProjectId, event);
+                  setSelectedProjectId(targetProjectId);
+                } else {
+                  toast.error('Sélectionnez un projet');
                 }
               }}
               projects={projects}
