@@ -119,6 +119,19 @@ export function parseCSV(content: string): { headers: string[]; rows: string[][]
   const lines = content.split(/\r?\n/).filter(line => line.trim());
   if (lines.length === 0) return { headers: [], rows: [] };
 
+  // Detect delimiter (comma, semicolon, or tab)
+  const firstLine = lines[0].replace(/^\uFEFF/, '');
+  let delimiter = ',';
+  const semicolonCount = (firstLine.match(/;/g) || []).length;
+  const commaCount = (firstLine.match(/,/g) || []).length;
+  const tabCount = (firstLine.match(/\t/g) || []).length;
+  
+  if (semicolonCount > commaCount && semicolonCount > tabCount) {
+    delimiter = ';';
+  } else if (tabCount > commaCount && tabCount > semicolonCount) {
+    delimiter = '\t';
+  }
+
   const parseRow = (line: string): string[] => {
     const result: string[] = [];
     let current = '';
@@ -133,7 +146,7 @@ export function parseCSV(content: string): { headers: string[]; rows: string[][]
         } else {
           inQuotes = !inQuotes;
         }
-      } else if (char === ',' && !inQuotes) {
+      } else if (char === delimiter && !inQuotes) {
         result.push(current.trim());
         current = '';
       } else {
@@ -145,7 +158,7 @@ export function parseCSV(content: string): { headers: string[]; rows: string[][]
   };
 
   // Remove BOM if present
-  const headerLine = lines[0].replace(/^\uFEFF/, '');
+  const headerLine = firstLine;
   const headers = parseRow(headerLine);
   const rows = lines.slice(1).map(parseRow);
 

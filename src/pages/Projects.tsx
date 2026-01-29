@@ -4,13 +4,14 @@ import { ProjectTable } from '@/components/projects/ProjectTable';
 import { ProjectFilters } from '@/components/projects/ProjectFilters';
 import { ImportCSVDialog } from '@/components/projects/ImportCSVDialog';
 import { ExportCSVButton } from '@/components/projects/ExportCSVButton';
+import { AddProjectDialog } from '@/components/projects/AddProjectDialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Upload } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useProjects } from '@/context/ProjectContext';
 
 export default function Projects() {
-  const { filteredProjects } = useProjects();
+  const { filteredProjects, addProject } = useProjects();
   const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   return (
@@ -34,10 +35,7 @@ export default function Projects() {
               Importer CSV
             </Button>
             <ExportCSVButton />
-            <Button>
-              <Plus size={18} className="mr-2" />
-              Nouvelle affaire
-            </Button>
+            <AddProjectDialog onAddProject={addProject} />
           </div>
         </div>
 

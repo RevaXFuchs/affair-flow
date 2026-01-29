@@ -97,10 +97,9 @@ export default function CalendarView() {
 
   const weekDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
-  const handleAddEvent = (event: Omit<ProjectEvent, 'id'>) => {
-    if (selectedProjectId) {
-      addEvent(selectedProjectId, event);
-    }
+  const handleAddEvent = (projectId: string, event: Omit<ProjectEvent, 'id'>) => {
+    addEvent(projectId, event);
+    setSelectedProjectId(projectId);
   };
 
   const getEventColor = (event: CalendarEvent) => {
@@ -142,7 +141,11 @@ export default function CalendarView() {
               </SelectContent>
             </Select>
             <AddEventDialog
-              onAddEvent={handleAddEvent}
+              onAddEvent={(event) => {
+                if (selectedProjectId) {
+                  handleAddEvent(selectedProjectId, event);
+                }
+              }}
               projects={projects}
               selectedProjectId={selectedProjectId}
               onSelectProject={setSelectedProjectId}
@@ -152,6 +155,7 @@ export default function CalendarView() {
                   Nouvel événement
                 </Button>
               }
+              requireProjectSelection
             />
           </div>
         </div>

@@ -39,6 +39,7 @@ interface AddEventDialogProps {
   onSelectProject?: (projectId: string) => void;
   trigger?: React.ReactNode;
   initialDate?: Date;
+  requireProjectSelection?: boolean;
 }
 
 export function AddEventDialog({
@@ -48,6 +49,7 @@ export function AddEventDialog({
   onSelectProject,
   trigger,
   initialDate,
+  requireProjectSelection = false,
 }: AddEventDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState('');
@@ -65,7 +67,7 @@ export function AddEventDialog({
       toast.error('La date est requise');
       return;
     }
-    if (projects && !projectId) {
+    if ((projects || requireProjectSelection) && !projectId) {
       toast.error('Sélectionnez un projet');
       return;
     }
