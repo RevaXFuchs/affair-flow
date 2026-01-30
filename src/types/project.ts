@@ -53,6 +53,7 @@ export interface Project {
   milestones: Milestone[];
   contacts?: Contact[];
   events?: ProjectEvent[];
+  travelTimeMinutes?: number; // Default travel time for this project
   createdAt: string;
   updatedAt: string;
 }

@@ -8,6 +8,9 @@ import { StatusBadge } from './StatusBadge';
 import { PriorityBadge } from './PriorityBadge';
 import { SttBadge } from './SttBadge';
 import { DeleteProjectDialog } from './DeleteProjectDialog';
+import { TimeSummaryBadge } from '@/components/time/TimeSummaryBadge';
+import { TimeEntryDrawer } from '@/components/time/TimeEntryDrawer';
+import { AddTravelTimeButton } from '@/components/time/AddTravelTimeButton';
 import {
   Table,
   TableBody,
@@ -31,7 +34,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
-import { ChevronUp, ChevronDown, Trash2, MapPin, FolderOpen } from 'lucide-react';
+import { ChevronUp, ChevronDown, Trash2, MapPin, FolderOpen, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -45,7 +48,7 @@ export function ProjectTable() {
   const { settings, getMilestoneConfig, getMilestoneColor } = useSettings();
   const [sortField, setSortField] = useState<SortField>('updatedAt');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-
+  const [timeDrawerProject, setTimeDrawerProject] = useState<string | null>(null);
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     let comparison = 0;
     switch (sortField) {
@@ -125,6 +128,7 @@ export function ProjectTable() {
               </TableHead>
               <TableHead>nTRK</TableHead>
               <TableHead>STT</TableHead>
+              <TableHead className="text-center">Temps</TableHead>
               {milestoneTypes.map(type => (
                 <TableHead key={type} className="text-center">
                   {getMilestoneConfig(type)?.label || type.toUpperCase()}
@@ -172,6 +176,7 @@ export function ProjectTable() {
                         <span>Maps</span>
                       </a>
                     )}
+                    <AddTravelTimeButton projectId={project.id} />
                   </div>
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
@@ -222,6 +227,16 @@ export function ProjectTable() {
                       </span>
                     )}
                   </div>
+                </TableCell>
+                <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => setTimeDrawerProject(project.id)}
+                  >
+                    <TimeSummaryBadge projectId={project.id} compact />
+                  </Button>
                 </TableCell>
                 {milestoneTypes.map(type => {
                   const date = getMilestoneDate(project, type);
@@ -285,6 +300,14 @@ export function ProjectTable() {
         <div className="py-12 text-center text-muted-foreground">
           Aucune affaire trouvée
         </div>
+      )}
+
+      {timeDrawerProject && (
+        <TimeEntryDrawer
+          projectId={timeDrawerProject}
+          open={!!timeDrawerProject}
+          onOpenChange={(open) => !open && setTimeDrawerProject(null)}
+        />
       )}
     </div>
   );
