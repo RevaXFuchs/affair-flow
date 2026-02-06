@@ -4,6 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useProjects } from '@/context/ProjectContext';
 import { StatusBadge } from '@/components/projects/StatusBadge';
 import { PriorityBadge } from '@/components/projects/PriorityBadge';
+import { GlobalTimer } from '@/components/time/GlobalTimer';
 import { ProjectStatus, STATUS_LABELS, PRIORITY_LABELS, ProjectPriority } from '@/types/project';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -124,6 +125,50 @@ export default function Dashboard() {
               </Card>
             </motion.div>
           ))}
+        </div>
+
+        {/* Timer Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <GlobalTimer />
+          
+          {/* Quick Stats */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="text-lg">Accès rapide</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Link
+                  to="/projects"
+                  className="flex flex-col items-center p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                >
+                  <LayoutDashboard size={24} className="text-accent mb-2" />
+                  <span className="text-sm font-medium">Projets</span>
+                </Link>
+                <Link
+                  to="/calendar"
+                  className="flex flex-col items-center p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                >
+                  <Calendar size={24} className="text-accent mb-2" />
+                  <span className="text-sm font-medium">Calendrier</span>
+                </Link>
+                <Link
+                  to="/kanban"
+                  className="flex flex-col items-center p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                >
+                  <TrendingUp size={24} className="text-accent mb-2" />
+                  <span className="text-sm font-medium">Kanban</span>
+                </Link>
+                <Link
+                  to="/settings"
+                  className="flex flex-col items-center p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                >
+                  <Clock size={24} className="text-accent mb-2" />
+                  <span className="text-sm font-medium">Paramètres</span>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Content Grid */}
