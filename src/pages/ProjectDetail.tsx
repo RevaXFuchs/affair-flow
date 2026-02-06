@@ -8,6 +8,7 @@ import { SttBadge } from '@/components/projects/SttBadge';
 import { DeleteProjectDialog } from '@/components/projects/DeleteProjectDialog';
 import { ContactsSection } from '@/components/projects/ContactsSection';
 import { EventsSection } from '@/components/projects/EventsSection';
+import { ProjectTimeSection } from '@/components/time/ProjectTimeSection';
 import { ProjectStatus, ProjectPriority, STATUS_LABELS, PRIORITY_LABELS, MILESTONE_LABELS, MilestoneType, STT_OPTIONS } from '@/types/project';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -380,6 +381,9 @@ export default function ProjectDetail() {
             })}
           </div>
         </div>
+
+        {/* Time Tracking Section */}
+        <ProjectTimeSection projectId={project.id} />
 
         {/* Events Section */}
         <EventsSection
